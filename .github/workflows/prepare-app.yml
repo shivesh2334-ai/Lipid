@@ -1,0 +1,54 @@
+name: Prepare Lipid application
+on:
+  push:
+    paths:
+      - 'lipid-clinical-companion.zip'
+      - '.github/workflows/prepare-app.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack app at repository root
+        run: |
+          python3 - <<'PY'
+          import zipfile, pathlib, shutil, tempfile
+          root = pathlib.Path.cwd()
+          with tempfile.TemporaryDirectory() as tmp:
+              target = pathlib.Path(tmp)
+              with zipfile.ZipFile('lipid-clinical-companion.zip') as z:
+                  for entry in z.infolist():
+                      path = (target / entry.filename).resolve()
+                      if not path.is_relative_to(target.resolve()):
+                          raise ValueError('Unsafe archive path')
+                  z.extractall(target)
+              app = target / 'lipid-clinical-companion'
+              if not (app / 'package.json').is_file():
+                  raise ValueError('Expected application package missing')
+              for item in app.iterdir():
+                  dest = root / item.name
+                  if item.is_dir():
+                      shutil.copytree(item, dest, dirs_exist_ok=True)
+                  else:
+                      shutil.copy2(item, dest)
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install maintained Next.js 14 patch
+        run: npm install next@14
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Commit prepared source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src tests docs package.json package-lock.json next.config.js tsconfig.json next-env.d.ts vitest.config.ts README.md .gitignore .env.example
+          git diff --cached --quiet && exit 0
+          git commit -m "Prepare Lipid app source for Vercel deployment"
+          git push
