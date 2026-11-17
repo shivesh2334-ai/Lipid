@@ -1,0 +1,11 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.0.5 /home/claude/lipid-clinical-companion
+
+ ✓ tests/clinical.test.ts  (29 tests) 11ms
+
+ Test Files  1 passed (1)
+      Tests  29 passed (29)
+   Start at  00:23:05
+   Duration  434ms (transform 174ms, setup 0ms, collect 221ms, tests 11ms, environment 0ms, prepare 51ms)
+
